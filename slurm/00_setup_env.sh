@@ -28,8 +28,9 @@ else
     conda env update -f environment.yml --prune
 fi
 
-# Activate
-source activate immunogold || conda activate immunogold
+# Activate (eval conda hook first — required in non-interactive SLURM shells)
+eval "$(conda shell.bash hook)"
+conda activate immunogold
 
 # Verify key packages
 python -c "import torch; print(f'PyTorch {torch.__version__}, CUDA: {torch.cuda.is_available()}')"

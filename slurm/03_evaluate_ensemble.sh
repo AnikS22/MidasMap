@@ -13,7 +13,8 @@
 
 set -euo pipefail
 
-source activate immunogold || conda activate immunogold
+eval "$(conda shell.bash hook)"
+conda activate immunogold
 
 SYNAPSE_IDS=("S1" "S4" "S7" "S8" "S13" "S15" "S22" "S25" "S27" "S29")
 FOLD_NAME=${SYNAPSE_IDS[$SLURM_ARRAY_TASK_ID]}
@@ -80,7 +81,7 @@ for seed_idx in range(cfg['training']['n_seeds']):
 print(f'Loaded {len(models)} ensemble members for fold {fold_id}')
 
 # Ensemble inference with TTA
-test_hm, test_off = ensemble_predict(models, test_data['preprocessed'], device, use_tta=True)
+test_hm, test_off = ensemble_predict(models, test_data['image'], device, use_tta=True)
 
 # Extract and post-process
 hm_t = torch.from_numpy(test_hm)

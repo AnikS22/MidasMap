@@ -122,8 +122,7 @@ def detect_particles(
 
     # Convert to numpy for Gradio
     fig_overlay.canvas.draw()
-    overlay_img = np.frombuffer(fig_overlay.canvas.tostring_rgb(), dtype=np.uint8)
-    overlay_img = overlay_img.reshape(fig_overlay.canvas.get_width_height()[::-1] + (3,))
+    overlay_img = np.array(fig_overlay.canvas.renderer.buffer_rgba())[:, :, :3]
     plt.close(fig_overlay)
 
     # 2. Heatmap visualization
@@ -140,8 +139,7 @@ def detect_particles(
     plt.tight_layout()
 
     fig_hm.canvas.draw()
-    heatmap_img = np.frombuffer(fig_hm.canvas.tostring_rgb(), dtype=np.uint8)
-    heatmap_img = heatmap_img.reshape(fig_hm.canvas.get_width_height()[::-1] + (3,))
+    heatmap_img = np.array(fig_hm.canvas.renderer.buffer_rgba())[:, :, :3]
     plt.close(fig_hm)
 
     # 3. Stats dashboard
@@ -197,8 +195,7 @@ def detect_particles(
     plt.tight_layout()
 
     fig_stats.canvas.draw()
-    stats_img = np.frombuffer(fig_stats.canvas.tostring_rgb(), dtype=np.uint8)
-    stats_img = stats_img.reshape(fig_stats.canvas.get_width_height()[::-1] + (3,))
+    stats_img = np.array(fig_stats.canvas.renderer.buffer_rgba())[:, :, :3]
     plt.close(fig_stats)
 
     # 4. CSV export
@@ -233,10 +230,7 @@ def detect_particles(
 # Gradio UI
 # ---------------------------------------------------------------------------
 def build_app():
-    with gr.Blocks(
-        title="MidasMap - Immunogold Particle Detection",
-        theme=gr.themes.Soft(),
-    ) as app:
+    with gr.Blocks(title="MidasMap - Immunogold Particle Detection") as app:
         gr.Markdown(
             "# MidasMap\n"
             "### Immunogold Particle Detection for TEM Synapse Images\n"

@@ -253,6 +253,7 @@ class ImmunogoldDataset(Dataset):
         self.sigmas = sigmas or {"6nm": 1.0, "12nm": 1.5}
         self.samples_per_epoch = samples_per_epoch
         self.mode = mode
+        self._base_seed = seed
         self.rng = np.random.default_rng(seed)
 
         # Split records
@@ -311,6 +312,9 @@ class ImmunogoldDataset(Dataset):
         return self.samples_per_epoch
 
     def __getitem__(self, idx: int) -> dict:
+        # Reseed RNG using idx so each call produces a unique patch.
+        # Without this, the same 200 patches repeat every epoch → instant overfitting.
+        self.rng = np.random.default_rng(self._base_seed + idx + int(torch.initial_seed() % 100000))
         """
         Sample a patch with ground truth heatmap.
 

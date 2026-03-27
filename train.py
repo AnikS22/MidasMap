@@ -251,7 +251,7 @@ def main():
         hard_mining_fraction=cfg["training"]["hard_mining_fraction"],
         copy_paste_per_class=cfg["training"]["copy_paste_per_class"],
         sigmas=cfg["heatmap"]["sigmas"],
-        samples_per_epoch=200,
+        samples_per_epoch=500,
         seed=args.seed,
     )
 

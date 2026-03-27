@@ -101,12 +101,16 @@ def generate_heatmap_gt(
             indexing="ij",
         )
 
-        # Gaussian centered at float coordinates
+        # Gaussian centered at INTEGER center (not float)
+        # The integer center MUST be exactly 1.0 — the CornerNet focal loss
+        # uses pos_mask = (gt == 1.0) and treats everything else as negative.
+        # Centering the Gaussian at the float position produces peaks of 0.78-0.93
+        # which the loss sees as negatives → zero positive training signal.
         gaussian = np.exp(
-            -((xx - cx_f) ** 2 + (yy - cy_f) ** 2) / (2 * sigma ** 2)
+            -((xx - cx_i) ** 2 + (yy - cy_i) ** 2) / (2 * sigma ** 2)
         )
 
-        # Scale Gaussian peak by confidence (for pseudo-label weighting)
+        # Scale by confidence (for pseudo-label weighting)
         gaussian = gaussian * conf
 
         # Element-wise max (handles overlapping particles correctly)

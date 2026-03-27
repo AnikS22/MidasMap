@@ -23,7 +23,8 @@ JOB1=$(sbatch --parsable --dependency=afterok:${JOB0} slurm/02_train_single_fold
 echo "Stage 1 (training):  Job ${JOB1} (array 0-49, depends on ${JOB0})"
 
 # Stage 2: Ensemble evaluation — 10 parallel jobs (depends on ALL training tasks)
-JOB2=$(sbatch --parsable --dependency=aftercorr:${JOB1} slurm/03_evaluate_ensemble.sh)
+# afterok on an array job waits for ALL array tasks to complete successfully
+JOB2=$(sbatch --parsable --dependency=afterok:${JOB1} slurm/03_evaluate_ensemble.sh)
 echo "Stage 2 (evaluate):  Job ${JOB2} (array 0-9, depends on ${JOB1})"
 
 echo ""

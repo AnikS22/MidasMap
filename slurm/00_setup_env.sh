@@ -11,6 +11,9 @@
 
 set -euo pipefail
 
+# Ensure log directory exists (SBATCH --output references it)
+mkdir -p logs
+
 echo "=== Setting up immunogold detection environment ==="
 echo "Date: $(date)"
 echo "Host: $(hostname)"

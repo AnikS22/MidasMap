@@ -13,7 +13,8 @@
 
 set -euo pipefail
 
-source activate immunogold || conda activate immunogold
+eval "$(conda shell.bash hook)"
+conda activate immunogold
 
 BEAD_CLASSES=("6nm" "12nm")
 BEAD_CLASS=${BEAD_CLASSES[$SLURM_ARRAY_TASK_ID]}

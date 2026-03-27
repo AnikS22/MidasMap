@@ -13,7 +13,8 @@
 
 set -euo pipefail
 
-source activate immunogold || conda activate immunogold
+eval "$(conda shell.bash hook)"
+conda activate immunogold
 
 # Map array task ID to fold and seed
 SYNAPSE_IDS=("S1" "S4" "S7" "S8" "S13" "S15" "S22" "S25" "S27" "S29")

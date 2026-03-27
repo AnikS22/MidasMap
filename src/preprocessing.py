@@ -150,11 +150,20 @@ def load_annotations_csv(csv_path: Path) -> pd.DataFrame:
     return df[["X", "Y"]]
 
 
+# Micron-to-pixel scale factor: consistent across all synapses (verified
+# against researcher's color overlay TIFs). The CSV columns labeled "XY in
+# microns" really ARE microns — multiply by this constant to get pixels.
+MICRONS_TO_PIXELS = 1790.0
+
+
 def load_all_annotations(
     record: SynapseRecord, image_shape: Tuple[int, int]
 ) -> Dict[str, np.ndarray]:
     """
     Load and convert annotations for one synapse to pixel coordinates.
+
+    CSV coordinates are in microns (despite filename suggesting normalization).
+    Multiply by MICRONS_TO_PIXELS (1790 px/micron) to convert.
 
     Args:
         record: SynapseRecord with CSV paths.
@@ -173,14 +182,14 @@ def load_all_annotations(
         all_coords = []
         for csv_path in paths:
             df = load_annotations_csv(csv_path)
-            # Validate normalized coordinates
-            assert df["X"].between(0, 1).all(), \
-                f"X coords not in [0,1] in {csv_path}"
-            assert df["Y"].between(0, 1).all(), \
-                f"Y coords not in [0,1] in {csv_path}"
-            # Convert to pixel space
-            px_x = df["X"].values * w
-            px_y = df["Y"].values * h
+            # Convert microns to pixels
+            px_x = df["X"].values * MICRONS_TO_PIXELS
+            px_y = df["Y"].values * MICRONS_TO_PIXELS
+            # Validate: coords must fall within image bounds
+            assert px_x.max() < w + 10, \
+                f"X coords out of bounds ({px_x.max():.0f} > {w}) in {csv_path}"
+            assert px_y.max() < h + 10, \
+                f"Y coords out of bounds ({px_y.max():.0f} > {h}) in {csv_path}"
             all_coords.append(np.stack([px_x, px_y], axis=1))
 
         if all_coords:

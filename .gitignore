@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Data and weights (too large for git)
+weights/*.pth.tar
+weights/*.pth
+data/raw/
+data/annotations_merged/
+checkpoints/
+results/
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.egg
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Claude-flow and Claude config
+.claude-flow/
+.claude/
+.swarm/
+.mcp.json
+node_modules/
+package-lock.json
+package.json

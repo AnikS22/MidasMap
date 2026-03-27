@@ -163,8 +163,9 @@ class BeadBank:
                 py = rng.integers(half + 5, h - half - 5)
 
                 # Skip if outside tissue mask
-                if mask is not None and not mask[py, px]:
-                    continue
+                if mask is not None:
+                    if py >= mask.shape[0] or px >= mask.shape[1] or not mask[py, px]:
+                        continue
 
                 # Check minimum distance from existing particles (avoid overlap)
                 too_close = False

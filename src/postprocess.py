@@ -4,7 +4,7 @@ Post-processing: structural mask filtering, cross-class NMS, threshold sweep.
 
 import numpy as np
 from scipy.spatial.distance import cdist
-from skimage.morphology import binary_dilation, disk
+from skimage.morphology import dilation, disk
 from typing import Dict, List, Optional
 
 
@@ -28,7 +28,7 @@ def apply_structural_mask_filter(
         return detections
 
     # Dilate mask to allow particles at region boundaries
-    tissue = binary_dilation(mask, disk(margin_px))
+    tissue = dilation(mask, disk(margin_px))
 
     filtered = []
     for det in detections:

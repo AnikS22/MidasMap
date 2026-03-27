@@ -7,32 +7,15 @@ data:
   incomplete_6nm: ["S7", "S15"]
   raw_dir: "data/raw"
   annotation_dir: "data/annotations"
-  merged_annotation_dir: "data/annotations_merged"
   weights_dir: "weights"
   patch_size: 512
   stride: 2
   bead_classes: ["6nm", "12nm"]
 
-preprocessing:
-  tophat_radii:
-    6nm: 8
-    12nm: 12
-  clahe_clip_limit: 0.03
-  clahe_kernel_size: 64
-
 heatmap:
   sigmas:
     6nm: 1.0
     12nm: 1.5
-
-lodestar:
-  crop_sizes:
-    6nm: 32
-    12nm: 48
-  confidence_percentile: 70
-  confirmation_radius_px: 8
-  discovery_radius_px: 15
-  discovery_confidence_weight: 0.5
 
 model:
   backbone: "resnet50"

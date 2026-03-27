@@ -12,6 +12,7 @@
 #SBATCH --error=logs/train_%A_%a.err
 
 set -euo pipefail
+mkdir -p logs
 
 eval "$(conda shell.bash hook)"
 conda activate immunogold

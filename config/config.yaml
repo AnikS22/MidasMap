@@ -1,4 +1,6 @@
 data:
+  # TODO: Update this path for your HPC cluster, e.g.:
+  # root: "/scratch/$USER/immunogold_data/Gold Particle Labelling"
   root: "/Users/mpcr/Downloads/Max Planck Data/Gold Particle Labelling"
   analyzed_dir: "analyzed synapses"
   test_dir: "labeled replica - Test Data from Synapses"

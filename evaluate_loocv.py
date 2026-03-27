@@ -22,7 +22,7 @@ import pandas as pd
 import torch
 import yaml
 
-from src.evaluate import match_detections_to_gt, compute_f1
+from src.evaluate import match_detections_to_gt
 from src.heatmap import extract_peaks
 from src.model import ImmunogoldCenterNet
 from src.postprocess import (
@@ -42,6 +42,8 @@ def parse_args():
                         help="Directory containing fold_*/phase3_*.pth")
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--use-tta", action="store_true")
+    parser.add_argument("--fold", type=str, default=None,
+                        help="Evaluate a single fold (e.g., S1). If omitted, runs all folds.")
     parser.add_argument("--output", type=str, default="results/loocv_metrics.csv")
     return parser.parse_args()
 
@@ -98,7 +100,13 @@ def main():
     match_radii = {k: float(v) for k, v in cfg["evaluation"]["match_radii_px"].items()}
     val_offset = cfg["evaluation"]["loocv_val_offset"]
 
-    for test_idx, test_sid in enumerate(synapse_ids):
+    # Support single-fold mode for SLURM array jobs
+    if args.fold:
+        eval_folds = [(synapse_ids.index(args.fold), args.fold)]
+    else:
+        eval_folds = list(enumerate(synapse_ids))
+
+    for test_idx, test_sid in eval_folds:
         print(f"\n{'='*60}")
         print(f"Fold {test_idx}: test={test_sid}")
 

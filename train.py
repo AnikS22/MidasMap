@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from src.dataset import ImmunogoldDataset
-from src.evaluate import match_detections_to_gt, compute_f1
+from src.evaluate import match_detections_to_gt
 from src.heatmap import extract_peaks
 from src.loss import total_loss
 from src.model import ImmunogoldCenterNet

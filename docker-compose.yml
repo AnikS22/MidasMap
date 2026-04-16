@@ -1,0 +1,10 @@
+services:
+  midasmap:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      PORT: "7860"
+    # Uncomment to use a local checkpoint (avoids re-downloading into the container):
+    # volumes:
+    #   - ./checkpoints/final:/app/checkpoints/final:ro

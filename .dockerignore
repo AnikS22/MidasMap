@@ -1,0 +1,9 @@
+.git
+.venv-midasmap
+**/__pycache__
+*.pyc
+.hf_space_staging
+gold-star-detector
+checkpoints
+*.tif
+*.tiff

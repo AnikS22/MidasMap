@@ -24,6 +24,17 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Hugging Face Space upload staging (contains large checkpoint)
+.hf_space_staging/
+
+# Vercel (linked project metadata)
+vercel-site/.vercel/
+vercel-site/
+
+# Virtual environments
+.venv/
+.venv-*/
+
 # Environment
 .env
 *.egg
@@ -40,3 +51,8 @@ Thumbs.db
 node_modules/
 package-lock.json
 package.json
+
+# Optional side projects / presentation assets (not part of core model repo)
+gold-star-detector/
+presentation/
+presentation_figures/

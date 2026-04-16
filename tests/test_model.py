@@ -9,7 +9,7 @@ from src.model import ImmunogoldCenterNet, BiFPN
 class TestModelForwardPass:
     def test_output_shapes(self):
         """Verify output shapes match stride-2 specification."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         x = torch.randn(1, 1, 512, 512)
         hm, off = model(x)
 
@@ -18,7 +18,7 @@ class TestModelForwardPass:
 
     def test_heatmap_sigmoid_range(self):
         """Heatmap outputs should be in [0, 1] from sigmoid."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         x = torch.randn(1, 1, 512, 512)
         hm, _ = model(x)
 
@@ -27,7 +27,7 @@ class TestModelForwardPass:
 
     def test_batch_dimension(self):
         """Model should handle batch size > 1."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         x = torch.randn(4, 1, 512, 512)
         hm, off = model(x)
 
@@ -36,7 +36,7 @@ class TestModelForwardPass:
 
     def test_variable_input_size(self):
         """Model should handle different input sizes (multiples of 32)."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
 
         for size in [256, 384, 512]:
             x = torch.randn(1, 1, size, size)
@@ -45,7 +45,7 @@ class TestModelForwardPass:
 
     def test_parameter_count(self):
         """Model should have approximately 25M parameters."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         n_params = sum(p.numel() for p in model.parameters())
         # ResNet-50 is ~25M, plus BiFPN and heads
         assert 20_000_000 < n_params < 40_000_000
@@ -54,7 +54,7 @@ class TestModelForwardPass:
 class TestFreezeUnfreeze:
     def test_freeze_encoder(self):
         """Frozen encoder should have no gradients."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         model.freeze_encoder()
 
         for name, param in model.named_parameters():
@@ -67,7 +67,7 @@ class TestFreezeUnfreeze:
 
     def test_unfreeze_deep(self):
         """Unfreezing deep layers should enable gradients for layer3/4."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         model.freeze_encoder()
         model.unfreeze_deep_layers()
 
@@ -81,7 +81,7 @@ class TestFreezeUnfreeze:
 
     def test_unfreeze_all(self):
         """Unfreeze all should enable all gradients."""
-        model = ImmunogoldCenterNet(pretrained_path=None)
+        model = ImmunogoldCenterNet(imagenet_encoder_fallback=False)
         model.freeze_encoder()
         model.unfreeze_all()
 

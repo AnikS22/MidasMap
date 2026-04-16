@@ -51,6 +51,7 @@ def main():
         bifpn_channels=cfg["model"]["bifpn_channels"],
         bifpn_rounds=cfg["model"]["bifpn_rounds"],
         num_classes=cfg["model"]["num_classes"],
+        imagenet_encoder_fallback=False,
     )
 
     ckpt = torch.load(args.checkpoint, map_location="cpu", weights_only=False)

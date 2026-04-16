@@ -71,6 +71,7 @@ def load_fold_models(ensemble_dir: Path, fold_id: str, cfg: dict,
                 bifpn_channels=cfg["model"]["bifpn_channels"],
                 bifpn_rounds=cfg["model"]["bifpn_rounds"],
                 num_classes=cfg["model"]["num_classes"],
+                imagenet_encoder_fallback=False,
             )
             ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
             model.load_state_dict(ckpt["model_state_dict"])

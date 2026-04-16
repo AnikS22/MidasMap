@@ -1,176 +1,84 @@
----
-license: mit
-tags:
-  - immunogold
-  - particle-detection
-  - electron-microscopy
-  - TEM
-  - neuroscience
-  - CenterNet
-  - CEM500K
-  - synapse
-datasets:
-  - custom
-metrics:
-  - f1
-model-index:
-  - name: MidasMap
-    results:
-      - task:
-          type: object-detection
-          name: Immunogold Particle Detection
-        metrics:
-          - type: f1
-            value: 0.943
-            name: LOOCV Mean F1 (8 annotated folds)
----
+# MidasMap
 
-# MidasMap: Immunogold Particle Detection for TEM Synapse Images
+MidasMap detects **6 nm (AMPA)** and **12 nm (NR1/NMDA)** immunogold particles in FFRIL TEM synapse images using a CenterNet-style detector with a CEM500K-pretrained encoder.
 
-MidasMap automatically detects **6nm** (AMPA receptor) and **12nm** (NR1/NMDA receptor) immunogold particles in freeze-fracture replica immunolabeling (FFRIL) transmission electron microscopy images.
+## Author
 
-## Performance
+This repository reflects end-to-end solo work by **Anik Sahai**: data prep, model design, training, evaluation, demo app, and deployment tooling.
+
+## Headline Results
 
 | Metric | Value |
-|--------|-------|
-| **LOOCV Mean F1** | **0.943** (8 folds with sufficient annotations) |
-| 6nm (AMPA) F1 | 0.944 (100% recall) |
-| 12nm (NR1) F1 | 0.909 (100% recall) |
+|---|---|
+| LOOCV mean F1 (8 usable folds) | **0.943** |
+| 6 nm F1 | 0.944 |
+| 12 nm F1 | 0.909 |
 | Parameters | 24.4M |
-| Inference | ~10s per image (GPU) |
 
-Validated on 453 labeled particles across 10 synapse images via leave-one-image-out cross-validation with 5 random seeds per fold.
+Evaluation is leave-one-image-out CV on 10 synapse images (453 labeled particles total).
+
+## Repo Layout
+
+- `src/` model, losses, training/inference utilities
+- `app.py` Gradio inference app
+- `train.py` and `train_final.py` training entry points
+- `predict.py` and `evaluate_loocv.py` evaluation/inference scripts
+- `config/` training config
+- `scripts/` local run + deployment helpers
+- `huggingface-space/` Space-ready app package
 
 ## Quick Start
 
-```python
-import torch
-from src.model import ImmunogoldCenterNet
-from src.ensemble import sliding_window_inference
-from src.heatmap import extract_peaks
-from src.postprocess import cross_class_nms
-import tifffile
-
-# Load model
-model = ImmunogoldCenterNet(bifpn_channels=128, bifpn_rounds=2)
-ckpt = torch.load("checkpoints/final/final_model.pth", map_location="cpu")
-model.load_state_dict(ckpt["model_state_dict"])
-model.eval()
-
-# Run on any TEM image
-img = tifffile.imread("your_image.tif")
-if img.ndim == 3:
-    img = img[:, :, 0]
-
-with torch.no_grad():
-    hm, off = sliding_window_inference(model, img, patch_size=512, overlap=128)
-
-dets = extract_peaks(torch.from_numpy(hm), torch.from_numpy(off),
-                     stride=2, conf_threshold=0.25)
-dets = cross_class_nms(dets, 8)
-
-for d in dets:
-    print(f"{d['class']} at ({d['x']:.1f}, {d['y']:.1f}) conf={d['conf']:.3f}")
-```
-
-## Web Dashboard
+### 1) Install
 
 ```bash
-pip install gradio
-python app.py --checkpoint checkpoints/final/final_model.pth
-# Opens at http://localhost:7860
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Upload TIF images, adjust confidence threshold, view heatmaps, and export CSV results.
+### 2) Run local app
 
-## Architecture
-
-```
-Raw TEM Image (any size)
-    |
-[Sliding window: 512x512, 128px overlap]
-    |
-ResNet-50 (CEM500K pretrained on 500K EM images)
-    |
-BiFPN (bidirectional feature pyramid, 2 rounds, 128ch)
-    |
-Transposed Conv → stride-2 output (H/2 x W/2)
-    |
-+--Heatmap Head (2ch sigmoid: 6nm + 12nm)
-+--Offset Head (2ch: sub-pixel x,y correction)
-    |
-Peak extraction (max-pool NMS) → detections
+```bash
+./scripts/run_local.sh
 ```
 
-### Key Design Choices
+Open `http://127.0.0.1:7860`.
 
-- **CEM500K backbone**: Pretrained on 500,000 electron microscopy images. Reaches F1=0.93 in just 5 training epochs because it already understands EM structures.
-- **Stride-2 output**: Standard CenterNet uses stride 4, but 6nm beads (4-6px radius) collapse to 1px at that resolution. Stride 2 preserves 2-3px per bead.
-- **CornerNet focal loss**: Handles the extreme class imbalance (positive:negative pixel ratio ~1:23,000).
-- **Raw image input**: No preprocessing — CEM500K was trained on raw EM, so any heavy filtering creates a domain gap.
+### 3) Run prediction script
+
+```bash
+python predict.py --help
+```
+
+## Model Architecture (high level)
+
+1. Sliding-window inference (`512x512`, overlap) on full TEM images
+2. ResNet-50 encoder initialized from CEM500K
+3. BiFPN feature fusion
+4. Heatmap + offset heads (CenterNet-style keypoint detection)
+5. Peak extraction + NMS for final detections
 
 ## Training
 
-### 3-Phase Strategy
-1. **Phase 1** (40 epochs): Freeze encoder, train BiFPN + heads at lr=1e-3
-2. **Phase 2** (40 epochs): Unfreeze layer3+4 at lr=1e-5 to 5e-4
-3. **Phase 3** (60 epochs): Full fine-tune with discriminative LRs (1e-6 to 2e-4)
+Final training run:
 
-### Data Augmentation
-- Random 90-degree rotations, flips
-- Conservative brightness/contrast (+-8%)
-- Gaussian noise, mild blur
-- Copy-paste: real bead crops blended onto training patches
-- 70% hard mining (patches centered on particles)
-
-### Overfitting Prevention
-- RNG reseeded per sample (unique patches every epoch)
-- Early stopping (patience=20, monitoring val F1)
-- Weight decay 1e-4
-
-### Train Final Model
 ```bash
 python train_final.py --config config/config.yaml --device cuda:0
 ```
 
-### HPC (SLURM)
+LOOCV evaluation:
+
 ```bash
-sbatch slurm/05_train_final.sh
+python evaluate_loocv.py --help
 ```
 
-## LOOCV Results (per fold)
+## Deploy
 
-| Fold | Avg F1 | Best F1 | # Particles |
-|------|--------|---------|-------------|
-| S27 | 0.990 | 0.994 | 45 |
-| S8 | 0.981 | 0.988 | 70 |
-| S25 | 0.972 | 0.977 | 41 |
-| S29 | 0.956 | 0.966 | 36 |
-| S1 | 0.930 | 0.940 | 22 |
-| S4 | 0.919 | 0.972 | 113 |
-| S22 | 0.907 | 0.938 | 102 |
-| S13 | 0.890 | 0.912 | 20 |
-| S7* | 0.799 | 1.000 | 3 |
-| S15* | 0.633 | 0.667 | 1 |
-
-*S7 and S15 have insufficient annotations for reliable evaluation (3 and 1 particles respectively).
-
-## Dataset
-
-- 10 FFRIL synapse images (2048x2115 pixels)
-- 403 labeled 6nm particles (AMPA receptors)
-- 50 labeled 12nm particles (NR1 receptors)
-- Annotations in microns, converted at 1790 px/micron
-
-## Critical Implementation Notes
-
-1. **Coordinate conversion**: CSV "XY in microns" values are actual microns, not normalized coordinates. Multiply by 1790 to get pixels.
-2. **Heatmap peaks**: Must be exactly 1.0 at integer grid centers. The CornerNet focal loss uses `pos_mask = (gt == 1.0)`.
-3. **Patch diversity**: RNG must be reseeded per `__getitem__` call to prevent memorizing fixed patches.
+- Local container: `docker compose up --build`
+- Hugging Face Space instructions: `docs/DEPLOY.md`
 
 ## Citation
-
-If you use MidasMap in your research, please cite:
 
 ```bibtex
 @software{midasmap2026,
@@ -180,12 +88,3 @@ If you use MidasMap in your research, please cite:
   url={https://github.com/AnikS22/MidasMap}
 }
 ```
-
-## Dependencies
-
-- PyTorch >= 2.0
-- torchvision
-- albumentations
-- scikit-image
-- tifffile
-- CEM500K weights (download: `python scripts/download_cem500k.py`)

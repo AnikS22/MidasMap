@@ -215,6 +215,7 @@ class ImmunogoldCenterNet(nn.Module):
         bifpn_channels: int = 128,
         bifpn_rounds: int = 2,
         num_classes: int = 2,
+        imagenet_encoder_fallback: bool = True,
     ):
         super().__init__()
         self.num_classes = num_classes
@@ -229,13 +230,14 @@ class ImmunogoldCenterNet(nn.Module):
         # Load pretrained weights
         if pretrained_path:
             self._load_pretrained(backbone, pretrained_path)
-        else:
-            # Use ImageNet weights as fallback, adapting conv1
+        elif imagenet_encoder_fallback:
+            # Training: better init when CEM500K path is missing (downloads ~100MB).
             imagenet_backbone = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
             state = imagenet_backbone.state_dict()
             # Mean-pool RGB conv1 weights → grayscale
             state["conv1.weight"] = state["conv1.weight"].mean(dim=1, keepdim=True)
             backbone.load_state_dict(state, strict=False)
+        # else: random encoder init — use when loading a full checkpoint immediately (Gradio, predict).
 
         # Extract encoder stages
         self.stem = nn.Sequential(

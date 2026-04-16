@@ -1,0 +1,23 @@
+# Pin versions compatible with HF Spaces (adjust if Space build fails).
+# Rename to requirements.txt in the Space repo root.
+# Python 3.13+ (default on HF) removed stdlib audioop; Gradio/pydub need this backport:
+audioop-lts>=0.2.0
+# Pin web stack before Gradio: HF's resolver can otherwise pull Starlette 1.x + Jinja 3.2, which breaks Gradio 4.44 templates (unhashable dict in Jinja cache).
+jinja2==3.1.6
+starlette==0.41.3
+fastapi==0.115.6
+uvicorn[standard]>=0.24.0,<0.33.0
+numpy>=1.24,<2
+torch>=2.0.0
+torchvision>=0.15.0
+scipy>=1.10.0
+scikit-image>=0.21.0
+matplotlib>=3.7.0
+tifffile>=2023.4.0
+pandas>=2.0.0
+PyYAML>=6.0
+albumentations>=1.3.0
+opencv-python-headless>=4.7.0
+gradio==4.44.1
+huggingface_hub>=0.20.0,<0.25.0
+tqdm>=4.65.0

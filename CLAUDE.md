@@ -1,188 +1,122 @@
-# Claude Code Configuration - RuFlo V3
+# Project Setup & Development Guide
 
-## Behavioral Rules (Always Enforced)
+## Development Environment
 
-- Do what has been asked; nothing more, nothing less
-- NEVER create files unless they're absolutely necessary for achieving your goal
-- ALWAYS prefer editing an existing file to creating a new one
-- NEVER proactively create documentation files (*.md) or README files unless explicitly requested
-- NEVER save working files, text/mds, or tests to the root folder
-- Never continuously check status after spawning a swarm — wait for results
-- ALWAYS read a file before editing it
-- NEVER commit secrets, credentials, or .env files
-
-## File Organization
-
-- NEVER save to root folder — use the directories below
-- Use `/src` for source code files
-- Use `/tests` for test files
-- Use `/docs` for documentation and markdown files
-- Use `/config` for configuration files
-- Use `/scripts` for utility scripts
-- Use `/examples` for example code
-
-## Project Architecture
-
-- Follow Domain-Driven Design with bounded contexts
-- Keep files under 500 lines
-- Use typed interfaces for all public APIs
-- Prefer TDD London School (mock-first) for new code
-- Use event sourcing for state changes
-- Ensure input validation at system boundaries
-
-### Project Config
-
-- **Topology**: hierarchical-mesh
-- **Max Agents**: 15
-- **Memory**: hybrid
-- **HNSW**: Enabled
-- **Neural**: Enabled
-
-## Build & Test
+### Installation
 
 ```bash
-# Build
-npm run build
-
-# Test
-npm test
-
-# Lint
-npm run lint
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-- ALWAYS run tests after making code changes
-- ALWAYS verify build succeeds before committing
+### Dependencies
 
-## Security Rules
+See `requirements.txt` for complete list. Key packages:
+- PyTorch (GPU/CPU)
+- Torchvision (ResNet)
+- Gradio (Web UI)
+- OpenCV, Pillow, NumPy (Image processing)
+- PyYAML (Config parsing)
 
-- NEVER hardcode API keys, secrets, or credentials in source files
-- NEVER commit .env files or any file containing secrets
-- Always validate user input at system boundaries
-- Always sanitize file paths to prevent directory traversal
-- Run `npx @claude-flow/cli@latest security scan` after security-related changes
+## Project Structure
 
-## Concurrency: 1 MESSAGE = ALL RELATED OPERATIONS
+```
+src/              Model, losses, dataset, preprocessing, inference
+config/           Training configuration (YAML)
+scripts/          Utility scripts (visualization, deployment)
+huggingface-space/ Web app for HF Spaces deployment
+```
 
-- All operations MUST be concurrent/parallel in a single message
-- Use Claude Code's Task tool for spawning agents, not just MCP
-- ALWAYS batch ALL todos in ONE TodoWrite call (5-10+ minimum)
-- ALWAYS spawn ALL agents in ONE message with full instructions via Task tool
-- ALWAYS batch ALL file reads/writes/edits in ONE message
-- ALWAYS batch ALL Bash commands in ONE message
+See `CODEBASE.md` for detailed documentation of every file.
 
-## Swarm Orchestration
+## Training
 
-- MUST initialize the swarm using CLI tools when starting complex tasks
-- MUST spawn concurrent agents using Claude Code's Task tool
-- Never use CLI tools alone for execution — Task tool agents do the actual work
-- MUST call CLI tools AND Task tool in ONE message for complex work
+### 1. Configuration
+Edit `config/config.yaml` with desired hyperparameters.
 
-### 3-Tier Model Routing (ADR-026)
-
-| Tier | Handler | Latency | Cost | Use Cases |
-|------|---------|---------|------|-----------|
-| **1** | Agent Booster (WASM) | <1ms | $0 | Simple transforms (var→const, add types) — Skip LLM |
-| **2** | Haiku | ~500ms | $0.0002 | Simple tasks, low complexity (<30%) |
-| **3** | Sonnet/Opus | 2-5s | $0.003-0.015 | Complex reasoning, architecture, security (>30%) |
-
-- Always check for `[AGENT_BOOSTER_AVAILABLE]` or `[TASK_MODEL_RECOMMENDATION]` before spawning agents
-- Use Edit tool directly when `[AGENT_BOOSTER_AVAILABLE]`
-
-## Swarm Configuration & Anti-Drift
-
-- ALWAYS use hierarchical topology for coding swarms
-- Keep maxAgents at 6-8 for tight coordination
-- Use specialized strategy for clear role boundaries
-- Use `raft` consensus for hive-mind (leader maintains authoritative state)
-- Run frequent checkpoints via `post-task` hooks
-- Keep shared memory namespace for all agents
-
+### 2. Run Training
 ```bash
-npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized
+python train_final.py --config config/config.yaml --device cuda:0
 ```
 
-## Swarm Execution Rules
+### 3. Checkpoints
+Models saved to `checkpoints/final/`:
+- `phase1.pth` (40 epochs)
+- `phase2.pth` (40 epochs)
+- `phase3_*.pth` (intermediate checkpoints)
+- `final_model.pth` (140 epochs, ready for inference)
 
-- ALWAYS use `run_in_background: true` for all agent Task calls
-- ALWAYS put ALL agent Task calls in ONE message for parallel execution
-- After spawning, STOP — do NOT add more tool calls or check status
-- Never poll TaskOutput or check swarm status — trust agents to return
-- When agent results arrive, review ALL results before proceeding
+## Evaluation
 
-## V3 CLI Commands
-
-### Core Commands
-
-| Command | Subcommands | Description |
-|---------|-------------|-------------|
-| `init` | 4 | Project initialization |
-| `agent` | 8 | Agent lifecycle management |
-| `swarm` | 6 | Multi-agent swarm coordination |
-| `memory` | 11 | AgentDB memory with HNSW search |
-| `task` | 6 | Task creation and lifecycle |
-| `session` | 7 | Session state management |
-| `hooks` | 17 | Self-learning hooks + 12 workers |
-| `hive-mind` | 6 | Byzantine fault-tolerant consensus |
-
-### Quick CLI Examples
-
+Leave-one-image-out cross-validation:
 ```bash
-npx @claude-flow/cli@latest init --wizard
-npx @claude-flow/cli@latest agent spawn -t coder --name my-coder
-npx @claude-flow/cli@latest swarm init --v3-mode
-npx @claude-flow/cli@latest memory search --query "authentication patterns"
-npx @claude-flow/cli@latest doctor --fix
+python evaluate_loocv.py --config config/config.yaml --device cuda:0
 ```
 
-## Available Agents (60+ Types)
+Results saved to `results/loocv_metrics.json`.
 
-### Core Development
-`coder`, `reviewer`, `tester`, `planner`, `researcher`
+## Inference
 
-### Specialized
-`security-architect`, `security-auditor`, `memory-specialist`, `performance-engineer`
-
-### Swarm Coordination
-`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`
-
-### GitHub & Repository
-`pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`
-
-### SPARC Methodology
-`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`
-
-## Memory Commands Reference
-
+### Command Line
 ```bash
-# Store (REQUIRED: --key, --value; OPTIONAL: --namespace, --ttl, --tags)
-npx @claude-flow/cli@latest memory store --key "pattern-auth" --value "JWT with refresh" --namespace patterns
-
-# Search (REQUIRED: --query; OPTIONAL: --namespace, --limit, --threshold)
-npx @claude-flow/cli@latest memory search --query "authentication patterns"
-
-# List (OPTIONAL: --namespace, --limit)
-npx @claude-flow/cli@latest memory list --namespace patterns --limit 10
-
-# Retrieve (REQUIRED: --key; OPTIONAL: --namespace)
-npx @claude-flow/cli@latest memory retrieve --key "pattern-auth" --namespace patterns
+python predict.py \
+  --image path/to/image.tif \
+  --checkpoint checkpoints/final/final_model.pth \
+  --output detections.csv
 ```
 
-## Quick Setup
-
+### Web Interface
 ```bash
-claude mcp add claude-flow -- npx -y @claude-flow/cli@latest
-npx @claude-flow/cli@latest daemon start
-npx @claude-flow/cli@latest doctor --fix
+./scripts/run_local.sh
 ```
 
-## Claude Code vs CLI Tools
+Open `http://127.0.0.1:7860`.
 
-- Claude Code's Task tool handles ALL execution: agents, file ops, code generation, git
-- CLI tools handle coordination via Bash: swarm init, memory, hooks, routing
-- NEVER use CLI tools as a substitute for Task tool agents
+### Docker
+```bash
+docker compose up --build
+```
 
-## Support
+## Code Quality
 
-- Documentation: https://github.com/ruvnet/claude-flow
-- Issues: https://github.com/ruvnet/claude-flow/issues
+- No comments in code (self-documenting variable names)
+- Type hints on public APIs
+- Deterministic random seeding (seed=42)
+- Gradient clipping for stability
+
+## Data Format
+
+### Images
+- Format: 8-bit or 16-bit grayscale TIFF
+- Size: 2048×2048 pixels
+- Directory: `"Max Planck Data/Gold Particle Labelling/analyzed synapses/"`
+
+### Annotations
+- Format: JSON with particle coordinates
+- One JSON per image (same name, .json extension)
+- Structure: `{"particles": [{"x": float, "y": float, "class": "6nm"|"12nm"}, ...]}`
+
+## Key Files to Understand
+
+1. **src/model.py** — Neural network architecture (ResNet-50 + BiFPN + heads)
+2. **src/loss.py** — CornerNet focal loss + Smooth L1 offset loss
+3. **src/dataset.py** — Hard mining data loader (70% particle-centered, 30% random)
+4. **train_final.py** — 3-phase training (frozen → deep → full fine-tune)
+5. **predict.py** — Inference pipeline (sliding window + peak extraction + NMS)
+
+See `CODEBASE.md` for comprehensive documentation of all files.
+
+## Performance
+
+Target: F1 score ~0.94 on LOOCV evaluation
+- 6 nm particles: ~0.94 F1
+- 12 nm particles: ~0.91 F1
+- 453 total labeled particles across 10 synapse images
+
+## References
+
+- CenterNet: https://arxiv.org/abs/1904.07850
+- BiFPN: https://arxiv.org/abs/1912.03768
+- CEM500K: https://www.biorxiv.org/content/10.1101/2022.03.17.484749v1
+

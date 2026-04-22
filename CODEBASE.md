@@ -424,7 +424,7 @@ Python dependencies.
 Conda environment file (alternative to venv + requirements.txt).
 
 #### `CLAUDE.md`
-Project instructions for Claude Code integration (not part of core functionality).
+Development setup guide and project configuration.
 
 #### `.gitignore`
 Specifies which files to ignore in git (data, checkpoints, venv, etc.).

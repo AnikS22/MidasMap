@@ -12,7 +12,7 @@ license: mit
 
 # MidasMap: Precision Immunogold Detection
 
-> **Detect receptor-specific nanosized particles (6 nm AMPA, 12 nm NMDA) in electron microscopy synapses at 94.3% accuracy.** Upload your TEM synapse image and get particle locations in seconds—no manual annotation required.
+> **Detect receptor-specific nanosized particles (6 nm AMPA, 12 nm NMDA) in electron microscopy synapses.** Reported leave-one-image-out F1: 0.943 on 10 images. Upload your TEM synapse image and get particle locations in seconds—no manual annotation required.
 
 **Key Results**: F1=0.943 LOOCV | 6nm: 0.944 | 12nm: 0.909 | Sub-pixel accuracy (±0.5 px)
 
